@@ -46,7 +46,7 @@ DADOS_REDE= [        1         2     2   5    0           0       0    1
                      13        14    2   5    0           0       0    1
                      ];
 
-%% 1passo) Leitura dos dados:
+%% 1 - Leitura dos dados:
 
 %Dados de linha
 
@@ -78,7 +78,7 @@ nb=max(max(B_de),max(B_para));%numero de barras no sistema
 
 Vesp = V;
 
-%% 2 passo) Montagem da Ybarra
+%% 2 - Montagem da Ybarra
 %Montagem da matriz de admitancia shunt do sistema:
 
 for k=1:length(r)
@@ -367,216 +367,216 @@ disp(sprintf('Número de iterações: %d',iter))
 disp('---------------------------------------------------------------------------------------------')
 
 %% Análise Harmônica
-
-%        h    %mag   %angle
-Dharm=[  1     100     0
-         2      0      0
-         3      20.0   -265
-         4      0       0
-         5      15     -260
-         6      0       0
-         7      10      -320
-         8      0       0
-         9      5       120
-         10     0       0
-         11     2       0
-         12     0       0
-         13     1       0
-         14     0       0
-         15     0.5     0];
-
-
-%        h    %mag   %angle
+% 
+% %        h    %mag   %angle
 % Dharm=[  1     100     0
 %          2      0      0
-%          3      25      0
-%          4      0      0
-%          5      15      0
-%          6      0      0
-%          7      10      0
-%          8      0      0
-%          9      5      0
-%          10     0      0
-%          11     3     0];
-
-
-ho =   Dharm(:,1); % harmonic order
-mag =  Dharm(:,2); % magnitudes em percentage
-ang=   Dharm(:,3); % angles in degrees
-
-
-
-for h=2:max(ho)
-   
-   
-   for k=1:length(r)
-      if (r(k)& x(k))~=0
-         ykmh(k,1)=1/((r(k) + 1j*h*x(k)));
-      else
-         if r(k)==0 && x(k)~=0
-            ykmh(k,1)= 1/(0 + 1j*h*x(k));
-         else
-            if x(k)==0 & r(k)~=0
-               ykmh(k,1)= 1/((r(k)+1j*0));
-            else
-               if (r(k)& x(k))==0
-                  ykmh(k,1)= 0+ 0*1j;
-               end
-            end
-         end
-      end
-   end
-   
-   %Montagem da matriz Ybarra
-   
-   YBARRAh=zeros(nb,nb);
-   
-   for k=1:nb
-      YBARRAh(k,k)=YBARRAh(k,k)+1j*h*ysht_bus(k);
-   end
-   
-   
-   for k=1:nm
-      
-      m=B_de(k);
-      n=B_para(k);
-      
-      if a(k)~= 0
-         
-         YBARRAh(m,m)=YBARRAh(m,m)+ ((1/(a(k).^2))*ykmh(k))+ 1j*h*ysht_linha(k);
-         
-         if n~=m
-            
-            YBARRAh(m,n)=YBARRAh(m,n)- (1/a(k))*ykmh(k);
-            YBARRAh(n,n)=YBARRAh(n,n)+ ykmh(k)+ 1j*h*ysht_linha(k);
-            YBARRAh(n,m)=YBARRAh(n,m)- (1/a(k))*ykmh(k);
-         end
-      else
-         YBARRAh(m,m)=YBARRAh(m,m)+ ykmh(k)+ 1j*h*ysht_linha(k);
-         
-         if n~=m
-            
-            YBARRAh(m,n)=YBARRAh(m,n)- ykmh(k);
-            YBARRAh(n,n)=YBARRAh(n,n)+ ykmh(k)+ 1j*h*ysht_linha(k);
-            YBARRAh(n,m)=YBARRAh(n,m)- ykmh(k);
-         end
-      end
-   end
-   
-   
-   % Injeção de harmônicas
-   
-   barra_inj = 9; % barra onde serão injetadas harmônicas
-   
-   iinj1=(mag(h)/100)*abs(Iinj(barra_inj))*exp(1j*((ang(h)+ho(h)*angle(Iinj(barra_inj))*180/pi)*pi/180)); 
-   %iinj2=(mag(h)/100)*abs(Iinj(5))*exp(i*((ang(h)+ho(h)*angle(Iinj(5))*180/pi)*pi/180))% injeção na barra 5
-   
-   Ih = zeros(nb,1);
-   Ih(barra_inj) = iinj1;
-   
-   R=abs(V.^2./Pcalc);     % Resistência da carga linear
-   j=sqrt(-1);             % número complexo
-   X=abs(V.^2./Qcalc); % Reatância da carga linear
-   
-   Yp=(R.^-1 + (1j*h*X).^-1); % admitância equivalente da associação em paralelo de R com X
-   
-   %%% TESTE
-   %  garantir que a tensão nas barras PV e Vteta seja zero
-   barras_PV = find(tipo == 1);
-   barras_Vteta = find(tipo == 2);
-   indices = [barras_PV; barras_Vteta]';
-   for iter = indices
-      YBARRAh(iter,iter) = 10^10; 
-   end
-   %%%
-   
-%    YBARRAh(1,1)=10^10;     % para garantir que a tensão na sbestação seja zero
-   
-   YBARRAhn=YBARRAh;       % Formação da nova Ybarra com inclusão das cargas lineares
-   
-   for kk=1:nb
-      YBARRAhn(kk,kk)=YBARRAh(kk,kk)+Yp(kk);
-   end
-   ZBARRAh=inv(YBARRAhn);
-   
-   iter=0;
-   delV=100;
-   tol=10^-8;
-   Ih1=Ih;                % vetor de correntes injetadas (todas zero exceto nos lugares onde há FH)
-   Vh2=inv(YBARRAhn)*Ih;
-   
-   while abs(delV)>=tol
-      
-      Vh=inv(YBARRAhn)*Ih; % calcula a tensão a partir de inversão da Ybarra
-      
-      Ihn=Yp.*Vh;          % calcula corrente absorvida por cada carga linear
-      
-      Ih=Ih1-Ihn;          % corrente total na barra: injetada menos a absorvida
-      
-      Vh1=inv(YBARRAhn)*Ih; % calcula a tensão a partir de inversão da Ybarra
-      
-      delV=abs(max((Vh1)-(Vh))); % verifica a diferença entre as tensões calculadas antes e após compensação de corrente
-      
-      iter=iter+1;           % atualiza número da iteração
-      
-   end
-   Sh=Vh.*conj(Ih);
-   Tens_harm(:,h)=abs(Vh);  % armazena tensões harmônicas
-   Corr_harm(:,h)=abs(Ih);  % armazena correntes harmônicas
-   Po_harm(:,h)=(Sh);
-   abs_imped(:,h)=abs(ZBARRAh(4,4)); % armazena a impedância (amplitude) no driving point
-end
-
-%% Calcular THD de tensão por barra, percentual;
-% arredondado a partir da nona (9a) casa decimal;
-% multiplicado por 5 para bater com o resultado do HarmZs
-
-THD = 5*round( 100*sqrt(sum(Tens_harm.^2,2))./V , 9); 
-
-%% Plot 1 - 3D: barra, ordem harmônica, tensão harmônica
-
-ordens = 2:max(ho);
-
-% Tensão Harmônica
-figure
-s = surf(ordens,1:nb,Tens_harm(:,ordens));
-xlabel("Ordem Harmônica")
-ylabel("Barra")
-zlabel("Tensão Harmônica (p.u)")
-title("Tensões Harmônicas")
-% s.EdgeColor = 'interp';
-s.FaceColor = 'interp';
-colormap(jet)
-colorbar
-
-% Corrente Harmônica
-figure
-s = surf(ordens,1:nb,Corr_harm(:,ordens));
-xlabel("Ordem Harmônica")
-ylabel("Barra")
-zlabel("Corrente Harmônica (p.u)")
-title("Correntes Harmônicas")
-% s.EdgeColor = 'interp';
-s.FaceColor = 'interp';
-colormap(jet)
-colorbar
-
-%% Plot 2 - 2D: tensão x barra
-
-% Tensão na Frequência Fundamental (V)
-figure
-b = bar(1:nb,V);
-xlabel("Barra")
-ylabel("Tensão (p.u)")
-title("Tensões na Frequência Fundamental")
-
-%% Plot 3 - 2D: THD x barra
-
-% THD (%)
-figure
-b = bar(1:nb,THD);
-xlabel("Barra")
-ylabel("THD (%)")
-title("THD")
-
-
+%          3      20.0   -265
+%          4      0       0
+%          5      15     -260
+%          6      0       0
+%          7      10      -320
+%          8      0       0
+%          9      5       120
+%          10     0       0
+%          11     2       0
+%          12     0       0
+%          13     1       0
+%          14     0       0
+%          15     0.5     0];
+% 
+% 
+% %        h    %mag   %angle
+% % Dharm=[  1     100     0
+% %          2      0      0
+% %          3      25      0
+% %          4      0      0
+% %          5      15      0
+% %          6      0      0
+% %          7      10      0
+% %          8      0      0
+% %          9      5      0
+% %          10     0      0
+% %          11     3     0];
+% 
+% 
+% ho =   Dharm(:,1); % harmonic order
+% mag =  Dharm(:,2); % magnitudes em percentage
+% ang=   Dharm(:,3); % angles in degrees
+% 
+% 
+% 
+% for h=2:max(ho)
+%    
+%    
+%    for k=1:length(r)
+%       if (r(k)& x(k))~=0
+%          ykmh(k,1)=1/((r(k) + 1j*h*x(k)));
+%       else
+%          if r(k)==0 && x(k)~=0
+%             ykmh(k,1)= 1/(0 + 1j*h*x(k));
+%          else
+%             if x(k)==0 & r(k)~=0
+%                ykmh(k,1)= 1/((r(k)+1j*0));
+%             else
+%                if (r(k)& x(k))==0
+%                   ykmh(k,1)= 0+ 0*1j;
+%                end
+%             end
+%          end
+%       end
+%    end
+%    
+%    %Montagem da matriz Ybarra
+%    
+%    YBARRAh=zeros(nb,nb);
+%    
+%    for k=1:nb
+%       YBARRAh(k,k)=YBARRAh(k,k)+1j*h*ysht_bus(k);
+%    end
+%    
+%    
+%    for k=1:nm
+%       
+%       m=B_de(k);
+%       n=B_para(k);
+%       
+%       if a(k)~= 0
+%          
+%          YBARRAh(m,m)=YBARRAh(m,m)+ ((1/(a(k).^2))*ykmh(k))+ 1j*h*ysht_linha(k);
+%          
+%          if n~=m
+%             
+%             YBARRAh(m,n)=YBARRAh(m,n)- (1/a(k))*ykmh(k);
+%             YBARRAh(n,n)=YBARRAh(n,n)+ ykmh(k)+ 1j*h*ysht_linha(k);
+%             YBARRAh(n,m)=YBARRAh(n,m)- (1/a(k))*ykmh(k);
+%          end
+%       else
+%          YBARRAh(m,m)=YBARRAh(m,m)+ ykmh(k)+ 1j*h*ysht_linha(k);
+%          
+%          if n~=m
+%             
+%             YBARRAh(m,n)=YBARRAh(m,n)- ykmh(k);
+%             YBARRAh(n,n)=YBARRAh(n,n)+ ykmh(k)+ 1j*h*ysht_linha(k);
+%             YBARRAh(n,m)=YBARRAh(n,m)- ykmh(k);
+%          end
+%       end
+%    end
+%    
+%    
+%    % Injeção de harmônicas
+%    
+%    barra_inj = 9; % barra onde serão injetadas harmônicas
+%    
+%    iinj1=(mag(h)/100)*abs(Iinj(barra_inj))*exp(1j*((ang(h)+ho(h)*angle(Iinj(barra_inj))*180/pi)*pi/180)); 
+%    %iinj2=(mag(h)/100)*abs(Iinj(5))*exp(i*((ang(h)+ho(h)*angle(Iinj(5))*180/pi)*pi/180))% injeção na barra 5
+%    
+%    Ih = zeros(nb,1);
+%    Ih(barra_inj) = iinj1;
+%    
+%    R=abs(V.^2./Pcalc);     % Resistência da carga linear
+%    j=sqrt(-1);             % número complexo
+%    X=abs(V.^2./Qcalc); % Reatância da carga linear
+%    
+%    Yp=(R.^-1 + (1j*h*X).^-1); % admitância equivalente da associação em paralelo de R com X
+%    
+%    %%% TESTE
+%    %  garantir que a tensão nas barras PV e Vteta seja zero
+%    barras_PV = find(tipo == 1);
+%    barras_Vteta = find(tipo == 2);
+%    indices = [barras_PV; barras_Vteta]';
+%    for iter = indices
+%       YBARRAh(iter,iter) = 10^10; 
+%    end
+%    %%%
+%    
+% %    YBARRAh(1,1)=10^10;     % para garantir que a tensão na sbestação seja zero
+%    
+%    YBARRAhn=YBARRAh;       % Formação da nova Ybarra com inclusão das cargas lineares
+%    
+%    for kk=1:nb
+%       YBARRAhn(kk,kk)=YBARRAh(kk,kk)+Yp(kk);
+%    end
+%    ZBARRAh=inv(YBARRAhn);
+%    
+%    iter=0;
+%    delV=100;
+%    tol=10^-8;
+%    Ih1=Ih;                % vetor de correntes injetadas (todas zero exceto nos lugares onde há FH)
+%    Vh2=inv(YBARRAhn)*Ih;
+%    
+%    while abs(delV)>=tol
+%       
+%       Vh=inv(YBARRAhn)*Ih; % calcula a tensão a partir de inversão da Ybarra
+%       
+%       Ihn=Yp.*Vh;          % calcula corrente absorvida por cada carga linear
+%       
+%       Ih=Ih1-Ihn;          % corrente total na barra: injetada menos a absorvida
+%       
+%       Vh1=inv(YBARRAhn)*Ih; % calcula a tensão a partir de inversão da Ybarra
+%       
+%       delV=abs(max((Vh1)-(Vh))); % verifica a diferença entre as tensões calculadas antes e após compensação de corrente
+%       
+%       iter=iter+1;           % atualiza número da iteração
+%       
+%    end
+%    Sh=Vh.*conj(Ih);
+%    Tens_harm(:,h)=abs(Vh);  % armazena tensões harmônicas
+%    Corr_harm(:,h)=abs(Ih);  % armazena correntes harmônicas
+%    Po_harm(:,h)=(Sh);
+%    abs_imped(:,h)=abs(ZBARRAh(4,4)); % armazena a impedância (amplitude) no driving point
+% end
+% 
+% %% Calcular THD de tensão por barra, percentual;
+% % arredondado a partir da nona (9a) casa decimal;
+% % multiplicado por 5 para bater com o resultado do HarmZs
+% 
+% THD = 5*round( 100*sqrt(sum(Tens_harm.^2,2))./V , 9); 
+% 
+% %% Plot 1 - 3D: barra, ordem harmônica, tensão harmônica
+% 
+% ordens = 2:max(ho);
+% 
+% % Tensão Harmônica
+% figure
+% s = surf(ordens,1:nb,Tens_harm(:,ordens));
+% xlabel("Ordem Harmônica")
+% ylabel("Barra")
+% zlabel("Tensão Harmônica (p.u)")
+% title("Tensões Harmônicas")
+% % s.EdgeColor = 'interp';
+% s.FaceColor = 'interp';
+% colormap(jet)
+% colorbar
+% 
+% % Corrente Harmônica
+% figure
+% s = surf(ordens,1:nb,Corr_harm(:,ordens));
+% xlabel("Ordem Harmônica")
+% ylabel("Barra")
+% zlabel("Corrente Harmônica (p.u)")
+% title("Correntes Harmônicas")
+% % s.EdgeColor = 'interp';
+% s.FaceColor = 'interp';
+% colormap(jet)
+% colorbar
+% 
+% %% Plot 2 - 2D: tensão x barra
+% 
+% % Tensão na Frequência Fundamental (V)
+% figure
+% b = bar(1:nb,V);
+% xlabel("Barra")
+% ylabel("Tensão (p.u)")
+% title("Tensões na Frequência Fundamental")
+% 
+% %% Plot 3 - 2D: THD x barra
+% 
+% % THD (%)
+% figure
+% b = bar(1:nb,THD);
+% xlabel("Barra")
+% ylabel("THD (%)")
+% title("THD")
+% 
+% 
