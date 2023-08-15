@@ -3,17 +3,19 @@ clear
 close all
 
 % Monte Carlo
-E = 0.02;
+num_simulacoes = 1000000;
+E = 0.05;
+f_inf = (1-E); 
+f_sup = (1+E);
+R = 2*ones(num_simulacoes,1);
 V = 12;
-R_inf = 2*(1-E); 
-R_sup = 2*(1+E);
-n_s = 1000000;
-nrand = zeros(1,n_s);
 
-for k = 1:n_s
+nrand = zeros(1,num_simulacoes);
+
+for k = 1:num_simulacoes
 nrand(k) = rand;
 
-R(:,k) = R_inf +(R_sup - R_inf)*nrand(k);
+R(k)= R(k)*(f_inf +(f_sup - f_inf)*rand);
 I(:,k) = V/R(k);
 end
 
@@ -32,6 +34,8 @@ hist(R)
 
 figure
 hist(nrand)
+
+
 
 % % AI (Matematica Intervalar)
 % R=infsup(1.96,2.04);
