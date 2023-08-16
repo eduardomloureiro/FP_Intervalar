@@ -6,7 +6,7 @@ tic
 
 
 lambda=1;
-% Dados da Rede Elétrica de 14 barras
+% Dados da Rede El?trica de 14 barras
 
 %               Barra   V     A   Pg     Qg    Pl     Ql    ysht_bus tipo  Qmin Qmax
 %
@@ -46,9 +46,20 @@ DADOS_REDE= [        1         2     2   5    0           0       0    1
                      13        14    2   5    0           0       0    1
                      ];
 
+%% MONTE CARLO
+
+num_simulacoes = 100;
+
+E = 0.05;
+f_inf = (1-E); 
+f_sup = (1+E);
+
+% R = 2*ones(num_simulacoes,1);
+% R(k) = R(k)*(f_inf +(f_sup - f_inf)*rand);
+                  
 %% 1 - Leitura dos dados:
 
-%Dados de linha
+% Dados de linha
 
 B_de = DADOS_REDE(:,1);
 B_para = DADOS_REDE(:,2);
@@ -59,17 +70,17 @@ fi = (pi/180)*DADOS_REDE(:,6);
 ysht_linha = (1/200)*DADOS_REDE(:,7);
 tp = DADOS_REDE(:,8); %tp=1 (LT); tp=2 (trafo em fase); tp=3 (trafo defasador)
 
-%Dados da Barra
+% Dados da Barra
 
 Barra = DADOS_BARRA(:,1);
 V = DADOS_BARRA(:,2);
-teta = (pi/180)*DADOS_BARRA(:,3); %ângulo em radianos
+teta = (pi/180)*DADOS_BARRA(:,3); % ?ngulo em radianos
 Pg = (1/100)*DADOS_BARRA(:,4);
 Qg = (1/100)*DADOS_BARRA(:,5);
 Pl = lambda*(1/100)*DADOS_BARRA(:,6);
 Ql = lambda*(1/100)*DADOS_BARRA(:,7);
 ysht_bus = (1/100)*DADOS_BARRA(:,8);
-tipo = DADOS_BARRA(:,9); %tipo=0(barra PQ); tipo=1(barra PV); tipo=2(barra slack)
+tipo = DADOS_BARRA(:,9); % tipo=0(barra PQ); tipo=1(barra PV); tipo=2(barra slack)
 Qmin= (1/100)*DADOS_BARRA(:,10);
 Qmax= (1/100)*DADOS_BARRA(:,11);
 
@@ -137,7 +148,7 @@ end
 
 
 
-%Montagem das matrizes de condutância G e susceptância B
+%Montagem das matrizes de condut?ncia G e suscept?ncia B
 
 G = zeros(nb,nb);
 B = zeros(nb,nb);
@@ -153,7 +164,7 @@ B;
 
 %% 3 passo) Comparar valores especificados e calculados de potencias
 
-% Valores especificados para as potências ativas e reativas:
+% Valores especificados para as pot?ncias ativas e reativas:
 Pesp = zeros(nb,1);
 Qesp = zeros(nb,1);
 
@@ -162,7 +173,7 @@ for k=1:nb
    Qesp(k) = Qg(k)-Ql(k);
 end
 
-%Cálculo dos valores de potencias ativas e reativas (calculados em função das variáveis V e Theta):
+%C?lculo dos valores de potencias ativas e reativas (calculados em fun??o das vari?veis V e Theta):
 Pcalc = zeros(nb,1);
 Qcalc = zeros(nb,1);
 
@@ -177,7 +188,7 @@ end
 
 
 
-% Cálculo de delta P e delta Q
+% C?lculo de delta P e delta Q
 
 deltaP = zeros(nb,1);
 deltaQ = zeros(nb,1);
@@ -196,7 +207,7 @@ deltaY=[deltaP ; deltaQ];
 
 %% 4 passo) Processo iterativo
 
-iter=0;    % Número de iterações
+iter=0;    % N?mero de itera??es
 H=zeros(nb,nb);
 N=zeros(nb,nb);
 M=zeros(nb,nb);
@@ -248,9 +259,9 @@ while  max(abs(deltaY))>=tol
    
    
    
-   % Alterações no Jacobiano devido ao tipo de barra
-   % Para que fazer isso? (Não se especifica Q para barra PV e não se especifica
-   %P nem Q para a barra V-teta. Para eliminar as equações do sistema
+   % Altera??es no Jacobiano devido ao tipo de barra
+   % Para que fazer isso? (N?o se especifica Q para barra PV e n?o se especifica
+   %P nem Q para a barra V-teta. Para eliminar as equa??es do sistema
    %linear principal, faz-se as diagonais de L, H e L iguais a um
    %BIGNUMBER.
    
@@ -301,7 +312,7 @@ while  max(abs(deltaY))>=tol
    iter=iter+1;
 end
 
-%% 5 passo) Cálculo de Fluxos passantes nas linhas Pkm e Qkm ; cálculo de variáveis funcionais
+%% 5 passo) C?lculo de Fluxos passantes nas linhas Pkm e Qkm ; c?lculo de vari?veis funcionais
 
 for j=1:nm
    
@@ -310,7 +321,7 @@ for j=1:nm
    gkm= real(ykm);
    bkm = imag(ykm);
    %
-   if tp(j) == 1 %Linha de transmissão
+   if tp(j) == 1 %Linha de transmiss?o
       Pkm(j)= gkm(j)*V(k).^2 - V(k)*V(m)*(gkm(j)*cos(teta(k)-teta(m)) + bkm(j)*sin(teta(k)-teta(m)));
       Qkm(j) = - (ysht_linha(j)+bkm(j))*V(k).^2 + V(k)*V(m)*(bkm(j)*cos(teta(k)-teta(m)) - gkm(j)*sin(teta(k)-teta(m)));
       Pmk(j)= gkm(j)*V(m).^2 - V(k)*V(m)*(gkm(j)*cos(teta(k)-teta(m)) - bkm(j)*sin(teta(k)-teta(m)));
@@ -336,22 +347,22 @@ for j=1:nm
    end
 end
 
-%% Cálculo de correntes injetadas
+%% C?lculo de correntes injetadas
 Vc=V.*exp(1j*teta);
 S=Pcalc+1j*Qcalc;
 Iinj=conj(S./Vc);
 
 
 
-toc % finalização
+toc % finaliza??o
 
 teta=rad2deg(teta); %transformar radianos e graus
 
-%% 6 passo) Saída de dados
+%% 6 passo) Sa?da de dados
 disp('____________________________________________________________________________________________')
-disp('Resultado do fluxo de potência')
+disp('Resultado do fluxo de pot?ncia')
 disp('---------------------------------------------------------------------------------------------')
-disp('BARRA |   V    |  Teta (°)  |    P(MW)    |    Q(MVAr)    ')
+disp('BARRA |   V    |  Teta (?)  |    P(MW)    |    Q(MVAr)    ')
 disp('---------------------------------------------------------------------------------------------')
 for j=1:nb
    fprintf(1,'%6.0f   %6.4f    %6.4f       %6.4f         %6.4f\n',(j),V(j),teta(j),100*Pcalc(j),100*Qcalc(j))
@@ -363,10 +374,10 @@ for j=1:nm
    fprintf(1,'%6.0f    %6.0f          %6.4f         %6.4f            %6.4f             %6.4f\n',B_de(j),B_para(j),100*Pkm(j),100*Qkm(j),100*Pmk(j),100*Qmk(j))
 end
 disp('---------------------------------------------------------------------------------------------')
-disp(sprintf('Número de iterações: %d',iter))
+disp(sprintf('N?mero de itera??es: %d',iter))
 disp('---------------------------------------------------------------------------------------------')
 
-%% Análise Harmônica
+%% An?lise Harm?nica
 % 
 % %        h    %mag   %angle
 % Dharm=[  1     100     0
@@ -464,24 +475,24 @@ disp('--------------------------------------------------------------------------
 %    end
 %    
 %    
-%    % Injeção de harmônicas
+%    % Inje??o de harm?nicas
 %    
-%    barra_inj = 9; % barra onde serão injetadas harmônicas
+%    barra_inj = 9; % barra onde ser?o injetadas harm?nicas
 %    
 %    iinj1=(mag(h)/100)*abs(Iinj(barra_inj))*exp(1j*((ang(h)+ho(h)*angle(Iinj(barra_inj))*180/pi)*pi/180)); 
-%    %iinj2=(mag(h)/100)*abs(Iinj(5))*exp(i*((ang(h)+ho(h)*angle(Iinj(5))*180/pi)*pi/180))% injeção na barra 5
+%    %iinj2=(mag(h)/100)*abs(Iinj(5))*exp(i*((ang(h)+ho(h)*angle(Iinj(5))*180/pi)*pi/180))% inje??o na barra 5
 %    
 %    Ih = zeros(nb,1);
 %    Ih(barra_inj) = iinj1;
 %    
-%    R=abs(V.^2./Pcalc);     % Resistência da carga linear
-%    j=sqrt(-1);             % número complexo
-%    X=abs(V.^2./Qcalc); % Reatância da carga linear
+%    R=abs(V.^2./Pcalc);     % Resist?ncia da carga linear
+%    j=sqrt(-1);             % n?mero complexo
+%    X=abs(V.^2./Qcalc); % Reat?ncia da carga linear
 %    
-%    Yp=(R.^-1 + (1j*h*X).^-1); % admitância equivalente da associação em paralelo de R com X
+%    Yp=(R.^-1 + (1j*h*X).^-1); % admit?ncia equivalente da associa??o em paralelo de R com X
 %    
 %    %%% TESTE
-%    %  garantir que a tensão nas barras PV e Vteta seja zero
+%    %  garantir que a tens?o nas barras PV e Vteta seja zero
 %    barras_PV = find(tipo == 1);
 %    barras_Vteta = find(tipo == 2);
 %    indices = [barras_PV; barras_Vteta]';
@@ -490,9 +501,9 @@ disp('--------------------------------------------------------------------------
 %    end
 %    %%%
 %    
-% %    YBARRAh(1,1)=10^10;     % para garantir que a tensão na sbestação seja zero
+% %    YBARRAh(1,1)=10^10;     % para garantir que a tens?o na sbesta??o seja zero
 %    
-%    YBARRAhn=YBARRAh;       % Formação da nova Ybarra com inclusão das cargas lineares
+%    YBARRAhn=YBARRAh;       % Forma??o da nova Ybarra com inclus?o das cargas lineares
 %    
 %    for kk=1:nb
 %       YBARRAhn(kk,kk)=YBARRAh(kk,kk)+Yp(kk);
@@ -502,73 +513,73 @@ disp('--------------------------------------------------------------------------
 %    iter=0;
 %    delV=100;
 %    tol=10^-8;
-%    Ih1=Ih;                % vetor de correntes injetadas (todas zero exceto nos lugares onde há FH)
+%    Ih1=Ih;                % vetor de correntes injetadas (todas zero exceto nos lugares onde h? FH)
 %    Vh2=inv(YBARRAhn)*Ih;
 %    
 %    while abs(delV)>=tol
 %       
-%       Vh=inv(YBARRAhn)*Ih; % calcula a tensão a partir de inversão da Ybarra
+%       Vh=inv(YBARRAhn)*Ih; % calcula a tens?o a partir de invers?o da Ybarra
 %       
 %       Ihn=Yp.*Vh;          % calcula corrente absorvida por cada carga linear
 %       
 %       Ih=Ih1-Ihn;          % corrente total na barra: injetada menos a absorvida
 %       
-%       Vh1=inv(YBARRAhn)*Ih; % calcula a tensão a partir de inversão da Ybarra
+%       Vh1=inv(YBARRAhn)*Ih; % calcula a tens?o a partir de invers?o da Ybarra
 %       
-%       delV=abs(max((Vh1)-(Vh))); % verifica a diferença entre as tensões calculadas antes e após compensação de corrente
+%       delV=abs(max((Vh1)-(Vh))); % verifica a diferen?a entre as tens?es calculadas antes e ap?s compensa??o de corrente
 %       
-%       iter=iter+1;           % atualiza número da iteração
+%       iter=iter+1;           % atualiza n?mero da itera??o
 %       
 %    end
 %    Sh=Vh.*conj(Ih);
-%    Tens_harm(:,h)=abs(Vh);  % armazena tensões harmônicas
-%    Corr_harm(:,h)=abs(Ih);  % armazena correntes harmônicas
+%    Tens_harm(:,h)=abs(Vh);  % armazena tens?es harm?nicas
+%    Corr_harm(:,h)=abs(Ih);  % armazena correntes harm?nicas
 %    Po_harm(:,h)=(Sh);
-%    abs_imped(:,h)=abs(ZBARRAh(4,4)); % armazena a impedância (amplitude) no driving point
+%    abs_imped(:,h)=abs(ZBARRAh(4,4)); % armazena a imped?ncia (amplitude) no driving point
 % end
 % 
-% %% Calcular THD de tensão por barra, percentual;
+% %% Calcular THD de tens?o por barra, percentual;
 % % arredondado a partir da nona (9a) casa decimal;
 % % multiplicado por 5 para bater com o resultado do HarmZs
 % 
 % THD = 5*round( 100*sqrt(sum(Tens_harm.^2,2))./V , 9); 
 % 
-% %% Plot 1 - 3D: barra, ordem harmônica, tensão harmônica
+% %% Plot 1 - 3D: barra, ordem harm?nica, tens?o harm?nica
 % 
 % ordens = 2:max(ho);
 % 
-% % Tensão Harmônica
+% % Tens?o Harm?nica
 % figure
 % s = surf(ordens,1:nb,Tens_harm(:,ordens));
-% xlabel("Ordem Harmônica")
+% xlabel("Ordem Harm?nica")
 % ylabel("Barra")
-% zlabel("Tensão Harmônica (p.u)")
-% title("Tensões Harmônicas")
+% zlabel("Tens?o Harm?nica (p.u)")
+% title("Tens?es Harm?nicas")
 % % s.EdgeColor = 'interp';
 % s.FaceColor = 'interp';
 % colormap(jet)
 % colorbar
 % 
-% % Corrente Harmônica
+% % Corrente Harm?nica
 % figure
 % s = surf(ordens,1:nb,Corr_harm(:,ordens));
-% xlabel("Ordem Harmônica")
+% xlabel("Ordem Harm?nica")
 % ylabel("Barra")
-% zlabel("Corrente Harmônica (p.u)")
-% title("Correntes Harmônicas")
+% zlabel("Corrente Harm?nica (p.u)")
+% title("Correntes Harm?nicas")
 % % s.EdgeColor = 'interp';
 % s.FaceColor = 'interp';
 % colormap(jet)
 % colorbar
 % 
-% %% Plot 2 - 2D: tensão x barra
+% %% Plot 2 - 2D: tens?o x barra
 % 
-% % Tensão na Frequência Fundamental (V)
+% % Tens?o na Frequ?ncia Fundamental (V)
 % figure
 % b = bar(1:nb,V);
 % xlabel("Barra")
-% ylabel("Tensão (p.u)")
-% title("Tensões na Frequência Fundamental")
+% ylabel("Tens?o (p.u)")
+% title("Tens?es na Frequ?ncia Fundamental")
 % 
 % %% Plot 3 - 2D: THD x barra
 % 
