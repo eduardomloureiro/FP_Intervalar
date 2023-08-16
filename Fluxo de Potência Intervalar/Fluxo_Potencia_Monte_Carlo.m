@@ -4,7 +4,7 @@ tic
 clear all
 
 % escolha o número de simulações
-n_s = 10000;
+n_s = 1000;
 
 for mc=1:n_s  %executa o fluxo de potência probabilistico
       

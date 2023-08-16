@@ -1,13 +1,13 @@
-clc  
-format short
+clc, clear, close all
+format shortg
 tic
-clear all
+
 
 Fluxo_Potencia_Determ;
 
 % Solução Determinística
-solucao_V=[V];
-solucao_Ang=[teta];
+solucao_V = V;
+solucao_Ang = teta;
 
 % Jacobiana Determinística
 Jacob;
@@ -57,8 +57,8 @@ DADOS_REDE= [        1         2     2   5    0           0       0    1
                     
 % Incerteza associada as cargas
 
-P_incert = -(DADOS_BARRA(:,6)*(1-incerteza);
-Q_incert = -(DADOS_BARRA(:,7)*(1-incerteza);
+P_incert = -(DADOS_BARRA(:,6)*(1-incerteza));
+Q_incert = -(DADOS_BARRA(:,7)*(1-incerteza));
 
 % Derivada Primeira
 
@@ -72,12 +72,13 @@ derivada_prim = inv(Jacob)*([P_incert;Q_incert]);
 % delta = abs(incerteza)*ones(length(DADOS_BARRA(:,6))*2,1);
 
 % 
-        incerteza=-incerteza;         % Incerteza superior no algoritmo
-        V_int = solucao_V + derivada_prim; % Vetor de solução de primeira ordem  
-        Ang_int = solucao(:,2) + derivada_prim;
+        incerteza = -incerteza;         % Incerteza superior no algoritmo
+        
+        V_int = solucao_V + derivada_prim(1:nb); % Vetor de solução de primeira ordem  
+        Ang_int = solucao_Ang + derivada_prim(nb+1:end);
                 
-        incerteza=incerteza;         % Incerteza inferior no algoritmo
-        Vsol= solucao + derivada_prim; % Vetor de solução de primeira ordem  
+        incerteza = incerteza;         % Incerteza inferior no algoritmo
+        Vsol= solucao_V + derivada_prim(1:nb); % Vetor de solução de primeira ordem  
         Int(:,2)= Vsol;     
 
 %Int.V = [min(Int(:,2)')' max(Int(:,2)')'];
